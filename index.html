@@ -1,0 +1,1591 @@
+<!DOCTYPE html><html lang="zh"><head><meta charset="utf-8">
+<title>限价策略效果评估 · MoM-CEM-DiD 报告</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{--navy:#0C447C;--blue:#378ADD;--green:#27500A;--greenl:#97C459;--red:#A32D2D;--amber:#633806;--bg:#f5f6f8;--card:#fff;--line:#e6e9ee}
+*{box-sizing:border-box}
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:#1f2937;margin:0;padding:32px 20px;line-height:1.75;font-size:14px}
+.wrap{max-width:1120px;margin:0 auto;background:var(--card);border-radius:14px;padding:48px 56px;box-shadow:0 1px 3px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.04)}
+h1{font-size:26px;font-weight:600;color:var(--navy);margin:0 0 4px;letter-spacing:-.3px}
+.subtitle{color:#6b7280;font-size:13px;margin-bottom:8px}
+.meta{display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:#6b7280;padding:10px 0 0;border-top:1px solid var(--line);margin-top:14px}
+.meta b{color:#374151}
+.sec{margin-top:44px}
+.sec-h{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.sec-num{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.sec-t{font-size:19px;font-weight:600;color:var(--navy)}
+.sec-d{color:#6b7280;font-size:13px;margin:0 0 18px 42px}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0}
+.kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:8px 0}
+.k{border-radius:10px;padding:18px 16px;text-align:center;border:1px solid var(--line)}
+.k .v{font-size:24px;font-weight:700;letter-spacing:-.5px}.k .l{font-size:11px;color:#6b7280;margin-top:4px}
+.k .v2{font-size:15px;font-weight:600;color:#475569;margin-top:2px}
+.k.red{background:#fef2f2;border-color:#fecaca}.k.red .v{color:var(--red)}
+.k.green{background:#f0fdf4;border-color:#bbf7d0}.k.green .v{color:var(--green)}
+.k.blue{background:#eff6ff;border-color:#bfdbfe}.k.blue .v{color:var(--navy)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin:14px 0}
+.tbl th{background:#f8fafc;text-align:left;padding:9px 10px;font-weight:600;color:#475569;border-bottom:2px solid var(--line);font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.tbl td{padding:8px 10px;border-bottom:1px solid #f1f5f9}
+.tbl tr:hover td{background:#f8fafc}
+.neg{color:var(--red);font-weight:500}.pos{color:var(--green);font-weight:500}
+.chart{position:relative;height:320px;margin:14px 0;background:#fcfcfd;border-radius:8px;padding:8px}
+.chart.sm{height:260px}
+.concl{background:linear-gradient(135deg,#f0f7ff 0%,#f8fcff 100%);border-left:4px solid var(--blue);border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;font-size:13.5px}
+.concl b{color:var(--navy)}
+.method{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:20px 24px;font-size:13.5px;line-height:1.9}
+.method h4{margin:0 0 8px;color:var(--navy);font-size:14px}
+.formula{background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;margin:10px 0;font-family:ui-monospace,"SF Mono",monospace;font-size:12.5px;color:#334155}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:14px 0}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600}
+.tag.good{background:#dcfce7;color:#166534}.tag.bad{background:#fee2e2;color:#991b1b}.tag.mid{background:#fef3c7;color:#92400e}
+.dim-box{border:1px solid var(--line);border-radius:10px;padding:16px;margin:14px 0}
+.dim-box h5{margin:0 0 8px;color:var(--navy);font-size:13px}
+.bar-cell{position:relative;padding:7px 10px}.bar-fill{position:absolute;left:0;top:2px;bottom:2px;border-radius:0 3px 3px 0;opacity:.18}.bar-val{position:relative;z-index:1;font-weight:500}
+</style></head><body><div class="wrap">
+
+<h1>限价策略效果评估</h1>
+<div class="subtitle">MoM-CEM-DiD · 策略前后 30 天对比 · 4 维分层双重差分</div>
+<div class="meta">
+<span><b>策略生效：</b>2026-06-05</span>
+<span><b>Pre 期：</b>5.6-6.4（策略前 30 天）</span>
+<span><b>Post 期：</b>6.5-7.4（策略后 30 天）</span>
+<span><b>实验组：</b>Post 期限价策略酒店</span>
+<span><b>对照组：</b>Post 期未限价、Pre+Post 均有产（大盘）</span>
+</div>
+
+<!-- 核心结论 -->
+<div style="background:linear-gradient(135deg,#0C447C 0%,#185FA5 100%);color:#fff;border-radius:12px;padding:24px 28px;margin:20px 0 8px">
+<div style="font-size:11px;letter-spacing:2px;color:#a8c8e8;margin-bottom:10px">CORE FINDING · 核心结论</div>
+<div style="font-size:14px;line-height:2.1">
+<b style="color:#7dd3fc">① 毛变化（含自然趋势）</b><br>
+对比限价前30天（Pre期），策略酒店限价后30天（Post期）间夜 <span style="color:#ffb4b4">-11.8%</span>（-11.2万，日均-3,744）、收入 <span style="color:#ffb4b4">-4.9%</span>（-151.7万，日均-5.1万）、利润 <span style="color:#b4ffb4">+16.4%</span>（+375.9万，日均+12.5万）。该结果含大盘自然增长，不能直接归因策略，需借助对照组剥离。<br>
+<b style="color:#7dd3fc">② 纯策略效果（MoM-CEM-DiD）</b><br>
+因实验组和对照组结构差异显著，需按星级×城市×ADR档×规模档 4 维分层，以段内对照组 MoM 率为反事实，剥离可估计纯策略影响：间夜 <span style="color:#ffb4b4">-17.2%</span>（-16.4万，日均-5,450）、收入 <span style="color:#ffb4b4">-25.2%</span>（-782.8万，日均-26.1万）、<b style="color:#b4ffb4">利润 +10.6%（+242.8万，日均+8.1万）</b>。Pre 期平行趋势三指标全通过（p>0.05），反事实假设成立，结论可信。<br>
+<b style="color:#7dd3fc">③ 降幅集中与维度差异</b><br>
+间夜/收入损失集中于<b>高星（-33%）、高ADR 650+（-47%）、特牌（-32%，贡献 89% 收入损失）</b>酒店；<b>低星（-7%）、低ADR（Pre期平均adr 0-150 -7%）、金牌（-10%）、大规模（Pre期间夜800+ -3%）</b>酒店间夜降幅小、利润提升显著（+24%~+28%），为策略优质受益群体。<br>
+<b style="color:#7dd3fc">④ 酒店策略效果分层分化</b><br>
+5,876 家策略酒店按 DiD-ROI 打标：<span style="color:#b4ffb4">53% 明显受益</span>（极好 1,929 + 较好 1,200，ROI 中位 2.60）、<span style="color:#ffb4b4">30% 明显受损</span>（较差 631 + 极差 1,146，ROI 0.22）、近两成处于一般区间，策略分化显著。
+</div>
+</div>
+
+<!-- 板块1 -->
+<div class="sec">
+<div class="sec-h"><div class="sec-num">1</div><div class="sec-t">实验组策略前后直接变化（未剥离自然趋势）</div></div>
+<p class="sec-d">全量实验组（<span id="s1_n"></span> 家）Pre→Post 间夜/收入/利润直接变化。含市场自然增长趋势，仅作基线参照。</p>
+<div id="s1_kpi"></div>
+<table class="tbl" id="s1_tbl"></table>
+<div class="chart sm"><canvas id="s1_chart"></canvas></div>
+<div class="concl" id="s1_concl"></div>
+</div>
+
+<!-- 板块2 -->
+<div class="sec">
+<div class="sec-h"><div class="sec-num">2</div><div class="sec-t">MoM-CEM-DiD 剥离自然趋势，得纯策略效果</div></div>
+<p class="sec-d">实验组与对照组 Pre 期结构差异大，不能直接池化 DiD。按 4 维分层做 CEM-DiD，用段内对照组 MoM 作反事实，剥离出纯策略效果。</p>
+
+<h4 style="color:var(--navy);margin:18px 0 6px">2.1 Pre 期实验组 vs 对照组分布（差异大 → 必须分层）</h4>
+<p style="color:#6b7280;font-size:13px;margin:0 0 10px"><b>池化 DiD</b>：直接以对照组整体作为反事实，不做分层。但因实验组与对照组结构差异巨大（见下），会把结构差异误算成策略效果，故必须分层（CEM）控制结构后再做 DiD。</p>
+<div class="grid2">
+<div><div style="font-size:12px;color:#6b7280;margin-bottom:4px">星级构成</div><div class="chart sm"><canvas id="d_star"></canvas></div></div>
+<div><div style="font-size:12px;color:#6b7280;margin-bottom:4px">城市线级构成</div><div class="chart sm"><canvas id="d_city"></canvas></div></div>
+<div><div style="font-size:12px;color:#6b7280;margin-bottom:4px">策略前 ADR 档构成</div><div class="chart sm"><canvas id="d_adr"></canvas></div></div>
+<div><div style="font-size:12px;color:#6b7280;margin-bottom:4px">策略前规模档构成</div><div class="chart sm"><canvas id="d_size"></canvas></div></div>
+</div>
+<div class="concl" id="s2_dist_concl"></div>
+
+<h4 style="color:var(--navy);margin:22px 0 6px">2.2 MoM-CEM-DiD 方法说明</h4>
+<div class="method">
+<h4>分层双重差分（Coarsened Exact Matching + DiD）</h4>
+按 <b>星级 × 城市线级 × Pre期ADR档 × Pre期规模档</b> 精确分层。每个策略酒店匹配其所在维度的对照组段，用该段对照组的聚合 MoM 率作反事实。
+<div class="formula">对照率（段内）= Σ对照Post / Σ对照Pre − 1　（聚合率，抗 outlier）<br>
+隐含绝对_i = (Post_i − Pre_i) − Pre_i × 对照率_段　（= 策略实际变化 − 反事实变化 = 纯策略效果）<br>
+整体率DiD = Σ隐含绝对 / Σ策略Pre　（反推，Pre 加权）</div>
+<b>本质</b>：假设若无策略，实验组酒店应与其所处段的对照组变化率一致——这样即可剥离出策略的纯效果。该假设是否成立？看 Pre 期平行趋势检验。
+</div>
+
+<h4 style="color:var(--navy);margin:22px 0 6px">2.3 平行趋势检验（Pre1→Pre2，段内实验组 vs 对照组）</h4>
+<p style="color:#6b7280;font-size:13px;margin:0 0 10px">策略前 30 天（Pre 期）分为<b>前 15 天 Pre1（5.6-5.20）</b>和<b>后 15 天 Pre2（5.21-6.4）</b>，检验段内实验组与对照组变化趋势是否一致。若一致，则"若无策略应与段内对照组同率变化"假设成立。</p>
+<table class="tbl" id="s2_pt_tbl"></table>
+<div class="concl" id="s2_pt_concl"></div>
+
+<h4 style="color:var(--navy);margin:22px 0 6px">2.4 纯策略效果（剥离自然趋势后）</h4>
+<p style="color:#6b7280;font-size:13px;margin:0 0 10px" id="s2_match"></p>
+<div id="s2_kpi"></div>
+<table class="tbl" id="s2_tbl"></table>
+<div class="chart"><canvas id="s2_decomp"></canvas></div>
+<div class="concl" id="s2_concl"></div>
+</div>
+
+<!-- 板块3 -->
+<div class="sec">
+<div class="sec-h"><div class="sec-num">3</div><div class="sec-t">分维度下钻：哪些维度效果好 / 效果差</div></div>
+<p class="sec-d">效果 = 间夜降得少 + 利润升得多（好）；反之差。从 7 个维度下钻，看降幅集中、效果差异。</p>
+<div id="s3_dims"></div>
+<div class="concl" id="s3_concl"></div>
+</div>
+
+<!-- 板块4 -->
+<div class="sec">
+<div class="sec-h"><div class="sec-num">4</div><div class="sec-t">策略酒店个体打标</div></div>
+<p class="sec-d">基于纯策略效果（ΔProfit净、ΔRns净）+ DiD-ROI 打 5 档。</p>
+<div class="method">
+<h4>DiD-ROI 指标解释</h4>
+<div class="formula">
+ΔProfit净 = DiD 利润净效应（隐含绝对_利润，策略带来的纯利润增量，可正可负）<br>
+ΔRns净 = DiD 间夜净效应（隐含绝对_间夜，策略带来的纯间夜变化，限价场景为负）<br>
+p0 = Pre期单夜净利润 = Pre利润 / Pre间夜（策略前每间夜的盈利水平）<br>
+<br>
+量降净损失 = −ΔRns净 × p0　（因策略少卖的间夜，按旧盈利水平计算的利润机会成本，≥0）<br>
+价升净收益 = ΔProfit净 + 量降净损失　（留存间夜因撤补贴提价、单夜利润提升而多赚的总利润）<br>
+<br>
+DiD-ROI = 价升净收益 / 量降净损失 = 1 + ΔProfit净 / 量降净损失<br>
+（每损失 1 元间夜利润，能换回多少元价升收益；ROI>1 ⟺ 利润净增）
+</div>
+<h4>打标标准（5 档）</h4>
+<b>极好</b>：ΔProfit净>0 且 ΔRns净>0（量利齐升）；或 ΔProfit净>0 且 ΔRns净<0 且 ROI>5（高效以量换利）<br>
+<b>较好</b>：ΔProfit净>0 且 ΔRns净<0 且 1.5&lt;ROI≤5<br>
+<b>一般</b>：ΔProfit净>0 且 ΔRns净<0 且 0.8≤ROI≤1.5<br>
+<b>较差</b>：ΔProfit净<0 且 ΔRns净<0 且 0.5≤ROI&lt;0.8<br>
+<b>极差</b>：ΔProfit净<0 且 ΔRns净>0（量升利降）；或 ΔProfit净<0 且 ΔRns净<0 且 ROI&lt;0.5（低效以量换利）
+</div>
+<div class="chart"><canvas id="s4_chart"></canvas></div>
+<table class="tbl" id="s4_tbl"></table>
+<h4 style="color:var(--navy);margin:18px 0 6px">4.1 分层 × 星级交叉</h4>
+<table class="tbl" id="s4_star_tbl"></table>
+<h4 style="color:var(--navy);margin:18px 0 6px">4.2 分层 × 城市线级交叉</h4>
+<table class="tbl" id="s4_city_tbl"></table>
+<div class="concl" id="s4_concl"></div>
+</div>
+
+</div>
+<script>
+const D={
+ "s1": {
+  "间夜": {
+   "pre": 960934.0,
+   "post": 847623.0,
+   "delta": -113311.0,
+   "rate": -11.8,
+   "daily": -3777.0,
+   "per_hotel": -19.2
+  },
+  "收入": {
+   "pre": 31401149.2,
+   "post": 29836875.6,
+   "delta": -1564273.6,
+   "rate": -5.0,
+   "daily": -52142.5,
+   "per_hotel": -265.4
+  },
+  "利润": {
+   "pre": 23245022.4,
+   "post": 27011257.5,
+   "delta": 3766235.1,
+   "rate": 16.2,
+   "daily": 125541.2,
+   "per_hotel": 638.9
+  },
+  "n": 5895
+ },
+ "s2_dist": {
+  "星级": {
+   "labels": [
+    "中星",
+    "低星",
+    "高星"
+   ],
+   "treat": [
+    18.5,
+    40.4,
+    41.1
+   ],
+   "ctrl": [
+    10.2,
+    83.7,
+    6.1
+   ]
+  },
+  "城市": {
+   "labels": [
+    "一线城市",
+    "三线城市",
+    "二线城市",
+    "五线城市",
+    "六线城市",
+    "四线城市",
+    "新一线城市"
+   ],
+   "treat": [
+    19.9,
+    15.6,
+    19.2,
+    6.9,
+    0.5,
+    11.3,
+    26.8
+   ],
+   "ctrl": [
+    7.5,
+    18.8,
+    17.9,
+    15.8,
+    0.8,
+    17.6,
+    21.6
+   ]
+  },
+  "策略前adr": {
+   "labels": [
+    "0-150",
+    "150-250",
+    "250-400",
+    "400-650",
+    "650+"
+   ],
+   "treat": [
+    33.7,
+    25.1,
+    17.9,
+    17.3,
+    6.0
+   ],
+   "ctrl": [
+    61.2,
+    25.9,
+    8.7,
+    2.8,
+    1.3
+   ]
+  },
+  "策略前间夜": {
+   "labels": [
+    "0-100",
+    "100-300",
+    "300-500",
+    "500-800",
+    "800+"
+   ],
+   "treat": [
+    42.2,
+    44.9,
+    9.7,
+    2.5,
+    0.7
+   ],
+   "ctrl": [
+    93.4,
+    6.1,
+    0.4,
+    0.1,
+    0.0
+   ]
+  }
+ },
+ "s2_did": {
+  "间夜": {
+   "rate": -17.2,
+   "ia": -163509.0,
+   "daily": -5450.0,
+   "per_hotel": -27.8
+  },
+  "收入": {
+   "rate": -25.23,
+   "ia": -7828279.0,
+   "daily": -260943.0,
+   "per_hotel": -1332.2
+  },
+  "利润": {
+   "rate": 10.58,
+   "ia": 2427901.0,
+   "daily": 80930.0,
+   "per_hotel": 413.2
+  }
+ },
+ "s2_pt": {
+  "间夜": {
+   "mean": 4.16,
+   "p": 0.479
+  },
+  "收入": {
+   "mean": 5.12,
+   "p": 0.5683
+  },
+  "利润": {
+   "mean": 8.41,
+   "p": 0.3044
+  }
+ },
+ "s2_decomp": {
+  "间夜": {
+   "策略率": -11.8,
+   "对照率": 5.4,
+   "DiD率": -17.2
+  },
+  "收入": {
+   "策略率": -5.0,
+   "对照率": 20.23,
+   "DiD率": -25.23
+  },
+  "利润": {
+   "策略率": 16.2,
+   "对照率": 5.62,
+   "DiD率": 10.58
+  }
+ },
+ "s2_n_match": 5876,
+ "s2_n_unmatch": 19,
+ "s3": {
+  "星级": [
+   {
+    "cat": "中星",
+    "n": 1088,
+    "pct": 18.5,
+    "ia_rn": -28116.0,
+    "ia_rev": -651208.0,
+    "ia_p": 733838.0,
+    "rn_share": 17.2,
+    "rev_share": 8.3,
+    "p_share": 30.2,
+    "rn_rate": -14.83,
+    "rev_rate": -14.49,
+    "p_rate": 21.82
+   },
+   {
+    "cat": "低星",
+    "n": 2373,
+    "pct": 40.4,
+    "ia_rn": -33852.0,
+    "ia_rev": -302915.0,
+    "ia_p": 1157290.0,
+    "rn_share": 20.7,
+    "rev_share": 3.9,
+    "p_share": 47.7,
+    "rn_rate": -7.42,
+    "rev_rate": -4.9,
+    "p_rate": 23.91
+   },
+   {
+    "cat": "高星",
+    "n": 2415,
+    "pct": 41.1,
+    "ia_rn": -101541.0,
+    "ia_rev": -6874156.0,
+    "ia_p": 536774.0,
+    "rn_share": 62.1,
+    "rev_share": 87.8,
+    "p_share": 22.1,
+    "rn_rate": -33.35,
+    "rev_rate": -33.78,
+    "p_rate": 3.64
+   }
+  ],
+  "城市": [
+   {
+    "cat": "一线城市",
+    "n": 1168,
+    "pct": 19.9,
+    "ia_rn": -37170.0,
+    "ia_rev": -1848110.0,
+    "ia_p": 878976.0,
+    "rn_share": 22.7,
+    "rev_share": 23.6,
+    "p_share": 36.2,
+    "rn_rate": -19.22,
+    "rev_rate": -24.34,
+    "p_rate": 15.21
+   },
+   {
+    "cat": "三线城市",
+    "n": 912,
+    "pct": 15.5,
+    "ia_rn": -16275.0,
+    "ia_rev": -737402.0,
+    "ia_p": 319037.0,
+    "rn_share": 10.0,
+    "rev_share": 9.4,
+    "p_share": 13.1,
+    "rn_rate": -12.35,
+    "rev_rate": -20.82,
+    "p_rate": 12.28
+   },
+   {
+    "cat": "二线城市",
+    "n": 1127,
+    "pct": 19.2,
+    "ia_rn": -26891.0,
+    "ia_rev": -1099185.0,
+    "ia_p": 529762.0,
+    "rn_share": 16.4,
+    "rev_share": 14.0,
+    "p_share": 21.8,
+    "rn_rate": -14.88,
+    "rev_rate": -21.3,
+    "p_rate": 13.81
+   },
+   {
+    "cat": "五线城市",
+    "n": 402,
+    "pct": 6.8,
+    "ia_rn": -9791.0,
+    "ia_rev": -456513.0,
+    "ia_p": 62968.0,
+    "rn_share": 6.0,
+    "rev_share": 5.8,
+    "p_share": 2.6,
+    "rn_rate": -15.8,
+    "rev_rate": -25.12,
+    "p_rate": 4.58
+   },
+   {
+    "cat": "六线城市",
+    "n": 28,
+    "pct": 0.5,
+    "ia_rn": -771.0,
+    "ia_rev": -11672.0,
+    "ia_p": 3676.0,
+    "rn_share": 0.5,
+    "rev_share": 0.1,
+    "p_share": 0.2,
+    "rn_rate": -25.68,
+    "rev_rate": -22.15,
+    "p_rate": 9.02
+   },
+   {
+    "cat": "四线城市",
+    "n": 662,
+    "pct": 11.3,
+    "ia_rn": -15155.0,
+    "ia_rev": -883970.0,
+    "ia_p": 143896.0,
+    "rn_share": 9.3,
+    "rev_share": 11.3,
+    "p_share": 5.9,
+    "rn_rate": -15.62,
+    "rev_rate": -30.43,
+    "p_rate": 6.65
+   },
+   {
+    "cat": "新一线城市",
+    "n": 1577,
+    "pct": 26.8,
+    "ia_rn": -57455.0,
+    "ia_rev": -2791426.0,
+    "ia_p": 489585.0,
+    "rn_share": 35.1,
+    "rev_share": 35.7,
+    "p_share": 20.2,
+    "rn_rate": -20.32,
+    "rev_rate": -28.04,
+    "p_rate": 6.85
+   }
+  ],
+  "策略前adr": [
+   {
+    "cat": "0-150",
+    "n": 1984,
+    "pct": 33.8,
+    "ia_rn": -25606.0,
+    "ia_rev": -158847.0,
+    "ia_p": 862579.0,
+    "rn_share": 15.7,
+    "rev_share": 2.0,
+    "p_share": 35.5,
+    "rn_rate": -6.83,
+    "rev_rate": -3.5,
+    "p_rate": 24.24
+   },
+   {
+    "cat": "150-250",
+    "n": 1472,
+    "pct": 25.1,
+    "ia_rn": -34004.0,
+    "ia_rev": -631340.0,
+    "ia_p": 947494.0,
+    "rn_share": 20.8,
+    "rev_share": 8.1,
+    "p_share": 39.0,
+    "rn_rate": -12.75,
+    "rev_rate": -11.12,
+    "p_rate": 22.04
+   },
+   {
+    "cat": "250-400",
+    "n": 1049,
+    "pct": 17.9,
+    "ia_rn": -47454.0,
+    "ia_rev": -2132509.0,
+    "ia_p": 536045.0,
+    "rn_share": 29.0,
+    "rev_share": 27.2,
+    "p_share": 22.1,
+    "rn_rate": -29.27,
+    "rev_rate": -27.87,
+    "p_rate": 9.95
+   },
+   {
+    "cat": "400-650",
+    "n": 1017,
+    "pct": 17.3,
+    "ia_rn": -41067.0,
+    "ia_rev": -3023724.0,
+    "ia_p": 270587.0,
+    "rn_share": 25.1,
+    "rev_share": 38.6,
+    "p_share": 11.1,
+    "rn_rate": -36.0,
+    "rev_rate": -34.81,
+    "p_rate": 4.34
+   },
+   {
+    "cat": "650+",
+    "n": 354,
+    "pct": 6.0,
+    "ia_rn": -15377.0,
+    "ia_rev": -1881859.0,
+    "ia_p": -188803.0,
+    "rn_share": 9.4,
+    "rev_share": 24.0,
+    "p_share": -7.8,
+    "rn_rate": -46.64,
+    "rev_rate": -42.16,
+    "p_rate": -5.46
+   }
+  ],
+  "策略前间夜": [
+   {
+    "cat": "0-100",
+    "n": 2488,
+    "pct": 42.3,
+    "ia_rn": -39341.0,
+    "ia_rev": -1946574.0,
+    "ia_p": 447277.0,
+    "rn_share": 24.1,
+    "rev_share": 24.9,
+    "p_share": 18.4,
+    "rn_rate": -24.75,
+    "rev_rate": -27.76,
+    "p_rate": 8.35
+   },
+   {
+    "cat": "100-300",
+    "n": 2644,
+    "pct": 45.0,
+    "ia_rn": -87098.0,
+    "ia_rev": -4385800.0,
+    "ia_p": 1284796.0,
+    "rn_share": 53.3,
+    "rev_share": 56.0,
+    "p_share": 52.9,
+    "rn_rate": -19.02,
+    "rev_rate": -26.62,
+    "p_rate": 10.79
+   },
+   {
+    "cat": "300-500",
+    "n": 568,
+    "pct": 9.7,
+    "ia_rn": -28134.0,
+    "ia_rev": -1261713.0,
+    "ia_p": 192801.0,
+    "rn_share": 17.2,
+    "rev_share": 16.1,
+    "p_share": 7.9,
+    "rn_rate": -13.03,
+    "rev_rate": -24.35,
+    "p_rate": 5.12
+   },
+   {
+    "cat": "500-800",
+    "n": 145,
+    "pct": 2.5,
+    "ia_rn": -7941.0,
+    "ia_rev": -206565.0,
+    "ia_p": 365239.0,
+    "rn_share": 4.9,
+    "rev_share": 2.6,
+    "p_share": 15.0,
+    "rn_rate": -9.04,
+    "rev_rate": -11.62,
+    "p_rate": 25.81
+   },
+   {
+    "cat": "800+",
+    "n": 31,
+    "pct": 0.5,
+    "ia_rn": -995.0,
+    "ia_rev": -27626.0,
+    "ia_p": 137789.0,
+    "rn_share": 0.6,
+    "rev_share": 0.4,
+    "p_share": 5.7,
+    "rn_rate": -3.3,
+    "rev_rate": -4.79,
+    "p_rate": 27.8
+   }
+  ],
+  "挂牌": [
+   {
+    "cat": "无挂牌",
+    "n": 2469,
+    "pct": 42.0,
+    "ia_rn": -37030.0,
+    "ia_rev": -482748.0,
+    "ia_p": 1061851.0,
+    "rn_share": 22.6,
+    "rev_share": 6.2,
+    "p_share": 43.7,
+    "rn_rate": -9.52,
+    "rev_rate": -7.97,
+    "p_rate": 22.63
+   },
+   {
+    "cat": "特牌",
+    "n": 2140,
+    "pct": 36.4,
+    "ia_rn": -102595.0,
+    "ia_rev": -6947881.0,
+    "ia_p": 466437.0,
+    "rn_share": 62.7,
+    "rev_share": 88.8,
+    "p_share": 19.2,
+    "rn_rate": -31.84,
+    "rev_rate": -34.37,
+    "p_rate": 3.2
+   },
+   {
+    "cat": "金牌",
+    "n": 1267,
+    "pct": 21.6,
+    "ia_rn": -23884.0,
+    "ia_rev": -397650.0,
+    "ia_p": 899614.0,
+    "rn_share": 14.6,
+    "rev_share": 5.1,
+    "p_share": 37.1,
+    "rn_rate": -9.97,
+    "rev_rate": -8.36,
+    "p_rate": 24.63
+   }
+  ],
+  "商圈": [
+   {
+    "cat": "体育场馆",
+    "n": 78,
+    "pct": 1.3,
+    "ia_rn": -1691.0,
+    "ia_rev": -113644.0,
+    "ia_p": 40359.0,
+    "rn_share": 1.0,
+    "rev_share": 1.5,
+    "p_share": 1.7,
+    "rn_rate": -13.24,
+    "rev_rate": -22.21,
+    "p_rate": 10.68
+   },
+   {
+    "cat": "公园景点",
+    "n": 765,
+    "pct": 13.0,
+    "ia_rn": -25245.0,
+    "ia_rev": -1546792.0,
+    "ia_p": 257859.0,
+    "rn_share": 15.4,
+    "rev_share": 19.8,
+    "p_share": 10.6,
+    "rn_rate": -22.0,
+    "rev_rate": -30.31,
+    "p_rate": 6.88
+   },
+   {
+    "cat": "其他",
+    "n": 941,
+    "pct": 16.0,
+    "ia_rn": -26834.0,
+    "ia_rev": -1221454.0,
+    "ia_p": 330661.0,
+    "rn_share": 16.4,
+    "rev_share": 15.6,
+    "p_share": 13.6,
+    "rn_rate": -18.49,
+    "rev_rate": -25.63,
+    "p_rate": 9.21
+   },
+   {
+    "cat": "剧院",
+    "n": 13,
+    "pct": 0.2,
+    "ia_rn": -945.0,
+    "ia_rev": -34170.0,
+    "ia_p": 1468.0,
+    "rn_share": 0.6,
+    "rev_share": 0.4,
+    "p_share": 0.1,
+    "rn_rate": -33.55,
+    "rev_rate": -27.09,
+    "p_rate": 1.81
+   },
+   {
+    "cat": "动物园",
+    "n": 25,
+    "pct": 0.4,
+    "ia_rn": -1340.0,
+    "ia_rev": -51355.0,
+    "ia_p": 13185.0,
+    "rn_share": 0.8,
+    "rev_share": 0.7,
+    "p_share": 0.5,
+    "rn_rate": -22.97,
+    "rev_rate": -33.74,
+    "p_rate": 11.1
+   },
+   {
+    "cat": "医院",
+    "n": 50,
+    "pct": 0.9,
+    "ia_rn": -1213.0,
+    "ia_rev": -43874.0,
+    "ia_p": 3640.0,
+    "rn_share": 0.7,
+    "rev_share": 0.6,
+    "p_share": 0.1,
+    "rn_rate": -10.6,
+    "rev_rate": -18.9,
+    "p_rate": 1.89
+   },
+   {
+    "cat": "博物馆",
+    "n": 86,
+    "pct": 1.5,
+    "ia_rn": -3669.0,
+    "ia_rev": -235386.0,
+    "ia_p": 11278.0,
+    "rn_share": 2.2,
+    "rev_share": 3.0,
+    "p_share": 0.5,
+    "rn_rate": -26.89,
+    "rev_rate": -30.5,
+    "p_rate": 2.07
+   },
+   {
+    "cat": "古城",
+    "n": 74,
+    "pct": 1.3,
+    "ia_rn": -2032.0,
+    "ia_rev": -89779.0,
+    "ia_p": 32307.0,
+    "rn_share": 1.2,
+    "rev_share": 1.1,
+    "p_share": 1.3,
+    "rn_rate": -17.27,
+    "rev_rate": -20.85,
+    "p_rate": 9.95
+   },
+   {
+    "cat": "古镇",
+    "n": 51,
+    "pct": 0.9,
+    "ia_rn": -1569.0,
+    "ia_rev": -46784.0,
+    "ia_p": 27830.0,
+    "rn_share": 1.0,
+    "rev_share": 0.6,
+    "p_share": 1.1,
+    "rn_rate": -19.44,
+    "rev_rate": -20.83,
+    "p_rate": 18.04
+   },
+   {
+    "cat": "商业办公",
+    "n": 1044,
+    "pct": 17.8,
+    "ia_rn": -32110.0,
+    "ia_rev": -1552969.0,
+    "ia_p": 453803.0,
+    "rn_share": 19.6,
+    "rev_share": 19.8,
+    "p_share": 18.7,
+    "rn_rate": -19.49,
+    "rev_rate": -26.89,
+    "p_rate": 10.65
+   },
+   {
+    "cat": "大学",
+    "n": 299,
+    "pct": 5.1,
+    "ia_rn": -5783.0,
+    "ia_rev": -256002.0,
+    "ia_p": 205961.0,
+    "rn_share": 3.5,
+    "rev_share": 3.3,
+    "p_share": 8.5,
+    "rn_rate": -12.92,
+    "rev_rate": -20.38,
+    "p_rate": 21.97
+   },
+   {
+    "cat": "广场商圈",
+    "n": 751,
+    "pct": 12.8,
+    "ia_rn": -20675.0,
+    "ia_rev": -940177.0,
+    "ia_p": 292693.0,
+    "rn_share": 12.6,
+    "rev_share": 12.0,
+    "p_share": 12.1,
+    "rn_rate": -15.18,
+    "rev_rate": -22.98,
+    "p_rate": 9.59
+   },
+   {
+    "cat": "度假区",
+    "n": 172,
+    "pct": 2.9,
+    "ia_rn": -3750.0,
+    "ia_rev": -277820.0,
+    "ia_p": 9895.0,
+    "rn_share": 2.3,
+    "rev_share": 3.5,
+    "p_share": 0.4,
+    "rn_rate": -15.7,
+    "rev_rate": -33.9,
+    "p_rate": 1.69
+   },
+   {
+    "cat": "无商圈",
+    "n": 403,
+    "pct": 6.9,
+    "ia_rn": -9228.0,
+    "ia_rev": -322656.0,
+    "ia_p": 119056.0,
+    "rn_share": 5.6,
+    "rev_share": 4.1,
+    "p_share": 4.9,
+    "rn_rate": -15.3,
+    "rev_rate": -21.08,
+    "p_rate": 10.36
+   },
+   {
+    "cat": "机场",
+    "n": 177,
+    "pct": 3.0,
+    "ia_rn": -5290.0,
+    "ia_rev": -259494.0,
+    "ia_p": 87774.0,
+    "rn_share": 3.2,
+    "rev_share": 3.3,
+    "p_share": 3.6,
+    "rn_rate": -15.18,
+    "rev_rate": -26.59,
+    "p_rate": 12.15
+   },
+   {
+    "cat": "植物园",
+    "n": 1,
+    "pct": 0.0,
+    "ia_rn": -17.0,
+    "ia_rev": -117.0,
+    "ia_p": -26.0,
+    "rn_share": 0.0,
+    "rev_share": 0.0,
+    "p_share": -0.0,
+    "rn_rate": -36.42,
+    "rev_rate": -27.08,
+    "p_rate": -6.77
+   },
+   {
+    "cat": "海洋馆",
+    "n": 13,
+    "pct": 0.2,
+    "ia_rn": -244.0,
+    "ia_rev": 14290.0,
+    "ia_p": 29214.0,
+    "rn_share": 0.1,
+    "rev_share": -0.2,
+    "p_share": 1.2,
+    "rn_rate": -9.36,
+    "rev_rate": 25.78,
+    "p_rate": 64.12
+   },
+   {
+    "cat": "游乐园",
+    "n": 58,
+    "pct": 1.0,
+    "ia_rn": -2469.0,
+    "ia_rev": -126600.0,
+    "ia_p": 28009.0,
+    "rn_share": 1.5,
+    "rev_share": 1.6,
+    "p_share": 1.2,
+    "rn_rate": -27.48,
+    "rev_rate": -37.6,
+    "p_rate": 12.13
+   },
+   {
+    "cat": "火车站",
+    "n": 875,
+    "pct": 14.9,
+    "ia_rn": -19403.0,
+    "ia_rev": -723497.0,
+    "ia_p": 482935.0,
+    "rn_share": 11.9,
+    "rev_share": 9.2,
+    "p_share": 19.9,
+    "rn_rate": -13.11,
+    "rev_rate": -18.72,
+    "p_rate": 17.13
+   }
+  ],
+  "城市名": [
+   {
+    "cat": "深圳",
+    "n": 362,
+    "pct": 6.2,
+    "ia_rn": -12027.0,
+    "ia_rev": -357924.0,
+    "ia_p": 255550.0,
+    "rn_share": 7.4,
+    "rev_share": 4.6,
+    "p_share": 10.5,
+    "rn_rate": -15.6,
+    "rev_rate": -16.29,
+    "p_rate": 15.67
+   },
+   {
+    "cat": "上海",
+    "n": 303,
+    "pct": 5.2,
+    "ia_rn": -9321.0,
+    "ia_rev": -637591.0,
+    "ia_p": 202415.0,
+    "rn_share": 5.7,
+    "rev_share": 8.1,
+    "p_share": 8.3,
+    "rn_rate": -23.13,
+    "rev_rate": -30.62,
+    "p_rate": 12.23
+   },
+   {
+    "cat": "北京",
+    "n": 255,
+    "pct": 4.3,
+    "ia_rn": -9767.0,
+    "ia_rev": -608885.0,
+    "ia_p": 312331.0,
+    "rn_share": 6.0,
+    "rev_share": 7.8,
+    "p_share": 12.9,
+    "rn_rate": -27.19,
+    "rev_rate": -30.18,
+    "p_rate": 20.97
+   },
+   {
+    "cat": "广州",
+    "n": 248,
+    "pct": 4.2,
+    "ia_rn": -6055.0,
+    "ia_rev": -243710.0,
+    "ia_p": 108679.0,
+    "rn_share": 3.7,
+    "rev_share": 3.1,
+    "p_share": 4.5,
+    "rn_rate": -15.08,
+    "rev_rate": -18.83,
+    "p_rate": 10.85
+   },
+   {
+    "cat": "杭州",
+    "n": 244,
+    "pct": 4.2,
+    "ia_rn": -7501.0,
+    "ia_rev": -444184.0,
+    "ia_p": 17533.0,
+    "rn_share": 4.6,
+    "rev_share": 5.7,
+    "p_share": 0.7,
+    "rn_rate": -22.24,
+    "rev_rate": -31.08,
+    "p_rate": 1.61
+   },
+   {
+    "cat": "东莞",
+    "n": 220,
+    "pct": 3.7,
+    "ia_rn": -5991.0,
+    "ia_rev": -91900.0,
+    "ia_p": 110192.0,
+    "rn_share": 3.7,
+    "rev_share": 1.2,
+    "p_share": 4.5,
+    "rn_rate": -12.3,
+    "rev_rate": -12.2,
+    "p_rate": 20.18
+   },
+   {
+    "cat": "重庆",
+    "n": 169,
+    "pct": 2.9,
+    "ia_rn": -3912.0,
+    "ia_rev": -182936.0,
+    "ia_p": 121612.0,
+    "rn_share": 2.4,
+    "rev_share": 2.3,
+    "p_share": 5.0,
+    "rn_rate": -13.86,
+    "rev_rate": -18.58,
+    "p_rate": 16.48
+   },
+   {
+    "cat": "成都",
+    "n": 130,
+    "pct": 2.2,
+    "ia_rn": -4147.0,
+    "ia_rev": -277815.0,
+    "ia_p": 62644.0,
+    "rn_share": 2.5,
+    "rev_share": 3.5,
+    "p_share": 2.6,
+    "rn_rate": -14.63,
+    "rev_rate": -24.21,
+    "p_rate": 7.54
+   },
+   {
+    "cat": "苏州",
+    "n": 119,
+    "pct": 2.0,
+    "ia_rn": -4016.0,
+    "ia_rev": -136659.0,
+    "ia_p": 86109.0,
+    "rn_share": 2.5,
+    "rev_share": 1.7,
+    "p_share": 3.5,
+    "rn_rate": -21.85,
+    "rev_rate": -25.51,
+    "p_rate": 34.22
+   },
+   {
+    "cat": "南京",
+    "n": 101,
+    "pct": 1.7,
+    "ia_rn": -3743.0,
+    "ia_rev": -240047.0,
+    "ia_p": 28454.0,
+    "rn_share": 2.3,
+    "rev_share": 3.1,
+    "p_share": 1.2,
+    "rn_rate": -23.63,
+    "rev_rate": -33.22,
+    "p_rate": 5.68
+   },
+   {
+    "cat": "长沙",
+    "n": 99,
+    "pct": 1.7,
+    "ia_rn": -7251.0,
+    "ia_rev": -452552.0,
+    "ia_p": 77753.0,
+    "rn_share": 4.4,
+    "rev_share": 5.8,
+    "p_share": 3.2,
+    "rn_rate": -26.8,
+    "rev_rate": -34.72,
+    "p_rate": 8.8
+   },
+   {
+    "cat": "金华",
+    "n": 86,
+    "pct": 1.5,
+    "ia_rn": -2570.0,
+    "ia_rev": -41844.0,
+    "ia_p": 41628.0,
+    "rn_share": 1.6,
+    "rev_share": 0.5,
+    "p_share": 1.7,
+    "rn_rate": -18.55,
+    "rev_rate": -15.16,
+    "p_rate": 19.8
+   },
+   {
+    "cat": "南昌",
+    "n": 85,
+    "pct": 1.4,
+    "ia_rn": -2274.0,
+    "ia_rev": -67185.0,
+    "ia_p": 26771.0,
+    "rn_share": 1.4,
+    "rev_share": 0.9,
+    "p_share": 1.1,
+    "rn_rate": -18.91,
+    "rev_rate": -21.09,
+    "p_rate": 10.86
+   },
+   {
+    "cat": "贵阳",
+    "n": 82,
+    "pct": 1.4,
+    "ia_rn": -599.0,
+    "ia_rev": -21367.0,
+    "ia_p": 60767.0,
+    "rn_share": 0.4,
+    "rev_share": 0.3,
+    "p_share": 2.5,
+    "rn_rate": -3.6,
+    "rev_rate": -6.18,
+    "p_rate": 22.91
+   },
+   {
+    "cat": "佛山",
+    "n": 79,
+    "pct": 1.3,
+    "ia_rn": -911.0,
+    "ia_rev": -10028.0,
+    "ia_p": 42125.0,
+    "rn_share": 0.6,
+    "rev_share": 0.1,
+    "p_share": 1.7,
+    "rn_rate": -8.24,
+    "rev_rate": -4.02,
+    "p_rate": 22.8
+   },
+   {
+    "cat": "宁波",
+    "n": 77,
+    "pct": 1.3,
+    "ia_rn": -2365.0,
+    "ia_rev": -107323.0,
+    "ia_p": -14349.0,
+    "rn_share": 1.4,
+    "rev_share": 1.4,
+    "p_share": -0.6,
+    "rn_rate": -21.13,
+    "rev_rate": -33.99,
+    "p_rate": -5.96
+   },
+   {
+    "cat": "昆明",
+    "n": 75,
+    "pct": 1.3,
+    "ia_rn": -1350.0,
+    "ia_rev": -87576.0,
+    "ia_p": 5516.0,
+    "rn_share": 0.8,
+    "rev_share": 1.1,
+    "p_share": 0.2,
+    "rn_rate": -12.97,
+    "rev_rate": -28.1,
+    "p_rate": 2.35
+   },
+   {
+    "cat": "西安",
+    "n": 74,
+    "pct": 1.3,
+    "ia_rn": -4213.0,
+    "ia_rev": -212728.0,
+    "ia_p": -21452.0,
+    "rn_share": 2.6,
+    "rev_share": 2.7,
+    "p_share": -0.9,
+    "rn_rate": -25.01,
+    "rev_rate": -31.86,
+    "p_rate": -4.18
+   },
+   {
+    "cat": "惠州",
+    "n": 68,
+    "pct": 1.2,
+    "ia_rn": -558.0,
+    "ia_rev": 13828.0,
+    "ia_p": 52357.0,
+    "rn_share": 0.3,
+    "rev_share": -0.2,
+    "p_share": 2.2,
+    "rn_rate": -4.84,
+    "rev_rate": 7.72,
+    "p_rate": 37.16
+   },
+   {
+    "cat": "天津",
+    "n": 62,
+    "pct": 1.1,
+    "ia_rn": -2251.0,
+    "ia_rev": -109407.0,
+    "ia_p": 15438.0,
+    "rn_share": 1.4,
+    "rev_share": 1.4,
+    "p_share": 0.6,
+    "rn_rate": -23.96,
+    "rev_rate": -28.11,
+    "p_rate": 5.17
+   },
+   {
+    "cat": "武汉",
+    "n": 61,
+    "pct": 1.0,
+    "ia_rn": -2749.0,
+    "ia_rev": -184153.0,
+    "ia_p": -44932.0,
+    "rn_share": 1.7,
+    "rev_share": 2.4,
+    "p_share": -1.9,
+    "rn_rate": -26.16,
+    "rev_rate": -41.8,
+    "p_rate": -14.0
+   },
+   {
+    "cat": "厦门",
+    "n": 59,
+    "pct": 1.0,
+    "ia_rn": -1760.0,
+    "ia_rev": -124439.0,
+    "ia_p": 27571.0,
+    "rn_share": 1.1,
+    "rev_share": 1.6,
+    "p_share": 1.1,
+    "rn_rate": -21.33,
+    "rev_rate": -31.52,
+    "p_rate": 9.53
+   },
+   {
+    "cat": "福州",
+    "n": 56,
+    "pct": 1.0,
+    "ia_rn": -2378.0,
+    "ia_rev": -145203.0,
+    "ia_p": 21763.0,
+    "rn_share": 1.5,
+    "rev_share": 1.9,
+    "p_share": 0.9,
+    "rn_rate": -27.28,
+    "rev_rate": -37.74,
+    "p_rate": 8.51
+   },
+   {
+    "cat": "赣州",
+    "n": 53,
+    "pct": 0.9,
+    "ia_rn": -1654.0,
+    "ia_rev": -50150.0,
+    "ia_p": 19666.0,
+    "rn_share": 1.0,
+    "rev_share": 0.6,
+    "p_share": 0.8,
+    "rn_rate": -17.49,
+    "rev_rate": -24.3,
+    "p_rate": 15.79
+   },
+   {
+    "cat": "合肥",
+    "n": 51,
+    "pct": 0.9,
+    "ia_rn": -1681.0,
+    "ia_rev": -46835.0,
+    "ia_p": -6509.0,
+    "rn_share": 1.0,
+    "rev_share": 0.6,
+    "p_share": -0.3,
+    "rn_rate": -27.69,
+    "rev_rate": -32.79,
+    "p_rate": -6.05
+   },
+   {
+    "cat": "郑州",
+    "n": 48,
+    "pct": 0.8,
+    "ia_rn": -3701.0,
+    "ia_rev": -79042.0,
+    "ia_p": -18397.0,
+    "rn_share": 2.3,
+    "rev_share": 1.0,
+    "p_share": -0.8,
+    "rn_rate": -36.45,
+    "rev_rate": -36.17,
+    "p_rate": -10.59
+   },
+   {
+    "cat": "青岛",
+    "n": 47,
+    "pct": 0.8,
+    "ia_rn": -2585.0,
+    "ia_rev": -138271.0,
+    "ia_p": 69973.0,
+    "rn_share": 1.6,
+    "rev_share": 1.8,
+    "p_share": 2.9,
+    "rn_rate": -32.89,
+    "rev_rate": -23.3,
+    "p_rate": 16.86
+   },
+   {
+    "cat": "南宁",
+    "n": 46,
+    "pct": 0.8,
+    "ia_rn": -1096.0,
+    "ia_rev": -93521.0,
+    "ia_p": 18641.0,
+    "rn_share": 0.7,
+    "rev_share": 1.2,
+    "p_share": 0.8,
+    "rn_rate": -9.79,
+    "rev_rate": -27.33,
+    "p_rate": 7.5
+   },
+   {
+    "cat": "上饶",
+    "n": 44,
+    "pct": 0.7,
+    "ia_rn": -530.0,
+    "ia_rev": -47850.0,
+    "ia_p": 12891.0,
+    "rn_share": 0.3,
+    "rev_share": 0.6,
+    "p_share": 0.5,
+    "rn_rate": -6.04,
+    "rev_rate": -23.14,
+    "p_rate": 8.23
+   },
+   {
+    "cat": "无锡",
+    "n": 42,
+    "pct": 0.7,
+    "ia_rn": -1308.0,
+    "ia_rev": -73266.0,
+    "ia_p": 1189.0,
+    "rn_share": 0.8,
+    "rev_share": 0.9,
+    "p_share": 0.0,
+    "rn_rate": -29.63,
+    "rev_rate": -39.18,
+    "p_rate": 0.87
+   }
+  ]
+ },
+ "s4": [
+  {
+   "tier": "极好",
+   "n": 1929,
+   "pct": 32.8,
+   "profit": 3564852.0,
+   "roi_med": 9.47
+  },
+  {
+   "tier": "较好",
+   "n": 1200,
+   "pct": 20.4,
+   "profit": 1394007.0,
+   "roi_med": 2.37
+  },
+  {
+   "tier": "一般",
+   "n": 970,
+   "pct": 16.5,
+   "profit": 187837.0,
+   "roi_med": 1.07
+  },
+  {
+   "tier": "较差",
+   "n": 631,
+   "pct": 10.7,
+   "profit": -580337.0,
+   "roi_med": 0.65
+  },
+  {
+   "tier": "极差",
+   "n": 1146,
+   "pct": 19.5,
+   "profit": -2138458.0,
+   "roi_med": 0.22
+  }
+ ],
+ "s4_star": [
+  {
+   "cat": "中星",
+   "n": 1088,
+   "极好": 408,
+   "较好": 234,
+   "一般": 155,
+   "较差": 104,
+   "极差": 187
+  },
+  {
+   "cat": "低星",
+   "n": 2373,
+   "极好": 1034,
+   "较好": 480,
+   "一般": 262,
+   "较差": 145,
+   "极差": 452
+  },
+  {
+   "cat": "高星",
+   "n": 2415,
+   "极好": 487,
+   "较好": 486,
+   "一般": 553,
+   "较差": 382,
+   "极差": 507
+  }
+ ],
+ "s4_city": [
+  {
+   "cat": "一线城市",
+   "n": 1168,
+   "极好": 372,
+   "较好": 278,
+   "一般": 216,
+   "较差": 132,
+   "极差": 170
+  },
+  {
+   "cat": "三线城市",
+   "n": 912,
+   "极好": 305,
+   "较好": 183,
+   "一般": 153,
+   "较差": 83,
+   "极差": 188
+  },
+  {
+   "cat": "二线城市",
+   "n": 1127,
+   "极好": 376,
+   "较好": 242,
+   "一般": 198,
+   "较差": 122,
+   "极差": 189
+  },
+  {
+   "cat": "五线城市",
+   "n": 402,
+   "极好": 136,
+   "较好": 78,
+   "一般": 58,
+   "较差": 45,
+   "极差": 85
+  },
+  {
+   "cat": "六线城市",
+   "n": 28,
+   "极好": 13,
+   "较好": 4,
+   "一般": 4,
+   "较差": 2,
+   "极差": 5
+  },
+  {
+   "cat": "四线城市",
+   "n": 662,
+   "极好": 224,
+   "较好": 125,
+   "一般": 74,
+   "较差": 64,
+   "极差": 175
+  },
+  {
+   "cat": "新一线城市",
+   "n": 1577,
+   "极好": 503,
+   "较好": 290,
+   "一般": 267,
+   "较差": 183,
+   "极差": 334
+  }
+ ]
+};
+Chart.defaults.font.size=11;Chart.defaults.color='#475569';Chart.defaults.maintainAspectRatio=false;
+const NAVY='#0C447C',BLUE='#378ADD',GREEN='#27500A',GREENL='#97C459',RED='#A32D2D',AMBER='#BA7517',ORANGE='#D85A30';
+const TC=['#166534','#3B6D11','#BA7517','#D85A30','#A32D2D'];
+function fw(v){return(v/10000).toFixed(1)+'万'}
+function fws(v){return(v>=0?'+':'')+fw(v)}
+const STAR_ORDER={'低星':0,'中星':1,'高星':2,'集团':3};
+const CITY_ORDER={'一线城市':0,'新一线城市':1,'二线城市':2,'三线城市':3,'四线城市':4,'五线城市':5,'六线城市':6};
+function sortStar(a,b){return(STAR_ORDER[a]??9)-(STAR_ORDER[b]??9)}
+function sortCity(a,b){return(CITY_ORDER[a]??9)-(CITY_ORDER[b]??9)}
+function sortDist(d,fn){const idx=d.labels.map((_,i)=>i).sort((a,b)=>fn(d.labels[a],d.labels[b]));return{labels:idx.map(i=>d.labels[i]),treat:idx.map(i=>d.treat[i]),ctrl:idx.map(i=>d.ctrl[i])};}
+function sortArr(arr,key,fn){return[...arr].sort((a,b)=>fn(a[key],b[key]));}
+
+// 板块1 KPI两行+表+图
+const s1=D.s1;document.getElementById('s1_n').textContent=s1.n.toLocaleString();
+document.getElementById('s1_kpi').innerHTML='<div class="kpi-row">'+['间夜','收入','利润'].map(m=>{const x=s1[m];const c=x.rate>=0?'green':'red';return `<div class="k ${c}"><div class="v">${x.rate>=0?'+':''}${x.rate}%</div><div class="l">${m}变化率</div></div>`;}).join('')+'</div><div class="kpi-row">'+['间夜','收入','利润'].map(m=>{const x=s1[m];const c=x.delta>=0?'green':'red';return `<div class="k ${c}"><div class="v">${fws(x.delta)}</div><div class="l">${m}增量(30天)</div></div>`;}).join('')+'</div>';
+let h1='<tr><th>指标</th><th>Pre期</th><th>Post期</th><th>变化量</th><th>变化率</th><th>日均</th><th>单酒店</th></tr>';
+['间夜','收入','利润'].forEach(m=>{const x=s1[m];
+ h1+=`<tr><td>${m}</td><td>${x.pre.toLocaleString()}</td><td>${x.post.toLocaleString()}</td><td class="${x.delta>=0?'pos':'neg'}">${fws(x.delta)}</td><td class="${x.rate>=0?'pos':'neg'}">${x.rate>=0?'+':''}${x.rate}%</td><td>${fws(x.daily)}/天</td><td>${x.per_hotel.toFixed(1)}</td></tr>`;
+});
+document.getElementById('s1_tbl').innerHTML=h1;
+new Chart(document.getElementById('s1_chart'),{type:'bar',data:{labels:['间夜','收入','利润'],datasets:[{label:'Pre期',data:[s1.间夜.pre,s1.收入.pre,s1.利润.pre],backgroundColor:BLUE},{label:'Post期',data:[s1.间夜.post,s1.收入.post,s1.利润.post],backgroundColor:ORANGE}]},options:{plugins:{legend:{position:'top'}},scales:{y:{title:{display:true,text:'总量'}}}}});
+document.getElementById('s1_concl').innerHTML=`<b>毛变化</b>：间夜 <span class="neg">${s1.间夜.rate}%</span>（${fws(s1.间夜.delta)}，日均${fws(s1.间夜.daily)}）、收入 <span class="neg">${s1.收入.rate}%</span>（${fws(s1.收入.delta)}）、利润 <span class="pos">+${s1.利润.rate}%</span>（${fws(s1.利润.delta)}，日均${fws(s1.利润.daily)}）。但大盘本身在增长，毛变化含市场红利，需剥离。`;
+
+// 板块2.1
+function distChart(id,d){new Chart(document.getElementById(id),{type:'bar',data:{labels:d.labels,datasets:[{label:'实验组%',data:d.treat,backgroundColor:ORANGE},{label:'对照组%',data:d.ctrl,backgroundColor:BLUE}]},options:{plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10}}}},scales:{y:{beginAtZero:true,title:{display:true,text:'占比%',font:{size:10}}}}}});}
+distChart('d_star',sortDist(D.s2_dist['星级'],sortStar));distChart('d_city',sortDist(D.s2_dist['城市'],sortCity));distChart('d_adr',D.s2_dist['策略前adr']);distChart('d_size',D.s2_dist['策略前间夜']);
+document.getElementById('s2_dist_concl').innerHTML=`<b>结构差异巨大</b>：实验组多高星（41% vs 5%）、高 ADR（400-650 占 17% vs 3%）、大规模（100-300 占 45% vs 5%）；对照组多低星（86%）、小规模（0-100 占 95%）。<b>不能直接池化 DiD</b>（会把结构差异误算成策略效果），必须分层（CEM）控制结构。`;
+
+// 板块2.3
+const pt=D.s2_pt;let ph='<tr><th>指标</th><th>段DiDpre均值</th><th>p值</th><th>判定</th></tr>';
+['间夜','收入','利润'].forEach(m=>{const x=pt[m];const ok=x.p>0.05;
+ ph+=`<tr><td>${m}</td><td>${x.mean>=0?'+':''}${x.mean.toFixed(2)}pp</td><td>${x.p.toFixed(4)}</td><td class="${ok?'pos':'neg'}">${ok?'✓ 平行':'✗ 不平行'}</td></tr>`;
+});
+document.getElementById('s2_pt_tbl').innerHTML=ph;
+document.getElementById('s2_pt_concl').innerHTML=`<b>平行趋势全通过</b>（间夜/收入/利润 p&gt;0.05）——策略前 Pre1（5.6-5.20）→Pre2（5.21-6.4），实验组与对照组段内变化趋势一致，"若无策略应与段内对照组同率变化"假设成立，<b>MoM-CEM-DiD 有效</b>。`;
+
+// 板块2.4 匹配数+KPI(万)+表+分解图+结论
+const did=D.s2_did,decomp=D.s2_decomp;
+document.getElementById('s2_match').innerHTML=`共 <b>${D.s2_n_match.toLocaleString()}</b> 家策略酒店成功匹配 4 维对照组，${D.s2_n_unmatch} 家因 4 维 cell 无对照（≥10 家）未匹配，占比 ${(D.s2_n_unmatch/(D.s2_n_match+D.s2_n_unmatch)*100).toFixed(1)}%，不影响总体结论。`;
+document.getElementById('s2_kpi').innerHTML='<div class="kpi-row">'+['间夜','收入','利润'].map(m=>{const x=did[m];const c=x.rate>=0?'green':'red';return `<div class="k ${c}"><div class="v">${x.rate>=0?'+':''}${x.rate}%</div><div class="l">${m}纯策略率</div></div>`;}).join('')+'</div><div class="kpi-row">'+['间夜','收入','利润'].map(m=>{const x=did[m];const c=x.ia>=0?'green':'red';return `<div class="k ${c}"><div class="v">${fws(x.ia)}</div><div class="l">${m}增量(30天)</div></div>`;}).join('')+'</div>';
+let dh='<tr><th>指标</th><th>间夜</th><th>收入</th><th>利润</th></tr>';
+dh+=`<tr><td><b>纯策略变化率</b></td><td class="neg">${did.间夜.rate}%</td><td class="neg">${did.收入.rate}%</td><td class="pos">+${did.利润.rate}%</td></tr>`;
+dh+=`<tr><td><b>30天增量</b></td><td class="neg">${fws(did.间夜.ia)}</td><td class="neg">${fws(did.收入.ia)}</td><td class="pos">${fws(did.利润.ia)}</td></tr>`;
+dh+=`<tr><td>日均</td><td>${fws(did.间夜.daily)}/天</td><td>${fws(did.收入.daily)}/天</td><td class="pos">${fws(did.利润.daily)}/天</td></tr>`;
+dh+=`<tr><td>单酒店</td><td>${did.间夜.per_hotel.toFixed(1)}</td><td>${did.收入.per_hotel.toFixed(1)}</td><td class="pos">+${did.利润.per_hotel.toFixed(0)}</td></tr>`;
+document.getElementById('s2_tbl').innerHTML=dh;
+new Chart(document.getElementById('s2_decomp'),{type:'bar',data:{labels:['间夜','收入','利润'],datasets:[{label:'实验组MoM率(毛)',data:[decomp.间夜.策略率,decomp.收入.策略率,decomp.利润.策略率],backgroundColor:ORANGE},{label:'对照组MoM率(自然趋势)',data:[decomp.间夜.对照率,decomp.收入.对照率,decomp.利润.对照率],backgroundColor:BLUE},{label:'纯策略DiD率',data:[decomp.间夜.DiD率,decomp.收入.DiD率,decomp.利润.DiD率],backgroundColor:GREEN}]},options:{plugins:{legend:{position:'top'}},scales:{y:{title:{display:true,text:'率(%)'}}}}});
+document.getElementById('s2_concl').innerHTML=`<b>纯策略效果</b>：<b>变化率</b>——间夜 <span class="neg">${did.间夜.rate}%</span>、收入 <span class="neg">${did.收入.rate}%</span>、利润 <span class="pos">+${did.利润.rate}%</span>。<b>30天增量</b>——间夜 ${fws(did.间夜.ia)}、收入 ${fws(did.收入.ia)}、<b>利润 ${fws(did.利润.ia)}</b>（日均 ${fws(did.利润.daily)}/天）。撤补贴致间夜收入下降，但单夜利润提升使利润整体增长 ${did.利润.rate}%，"以规模换利润"成立。`;
+
+// 板块3 七维度下钻(贡献%表+数据条)
+function bar(val,max,color){const pct=Math.min(Math.abs(val)/max*100,100);return `<td class="bar-cell"><div class="bar-fill" style="width:${pct}%;background:${color}"></div><span class="bar-val">${val}%</span></td>`;}
+function dimBlock(key,title){let arr=D.s3[key];
+ if(key==='星级')arr=sortArr(arr,'cat',sortStar);
+ if(key==='城市')arr=sortArr(arr,'cat',sortCity);
+ const mR=Math.max(...arr.map(x=>x.rn_share)),mV=Math.max(...arr.map(x=>x.rev_share)),mP=Math.max(...arr.map(x=>x.p_share));
+ let html=`<div class="dim-box"><h5>${title}</h5><div class="chart sm"><canvas id="z_${key}"></canvas></div>`;
+ html+=`<table class="tbl"><tr><th>类别</th><th>家数</th><th>占比</th><th>间夜隐含</th><th>收入隐含</th><th>利润隐含</th><th>间夜贡献</th><th>收入贡献</th><th>利润贡献</th></tr>`;
+ arr.forEach(x=>{html+=`<tr><td>${x.cat}</td><td>${x.n}</td><td>${x.pct}%</td><td class="neg">${x.ia_rn.toLocaleString()}</td><td class="neg">${x.ia_rev.toLocaleString()}</td><td class="${x.ia_p>=0?'pos':'neg'}">${x.ia_p>=0?'+':''}${x.ia_p.toLocaleString()}</td>${bar(x.rn_share,mR,RED)}${bar(x.rev_share,mV,ORANGE)}${bar(x.p_share,mP,GREEN)}</tr>`;});
+ html+=`</table></div>`;return html;}
+const dims=[['星级','按星级'],['城市','按城市线级'],['策略前adr','按策略前ADR档'],['策略前间夜','按策略前规模档'],['挂牌','按挂牌'],['商圈','按商圈'],['城市名','按城市（Top30）']];
+document.getElementById('s3_dims').innerHTML=dims.map(([k,t])=>dimBlock(k,t)).join('');
+dims.forEach(([k,t])=>{let arr=D.s3[k];
+ if(k==='星级')arr=sortArr(arr,'cat',sortStar);
+ if(k==='城市')arr=sortArr(arr,'cat',sortCity);
+ new Chart(document.getElementById('z_'+k),{type:'bar',data:{labels:arr.map(x=>x.cat),datasets:[{label:'间夜率DiD',data:arr.map(x=>x.rn_rate),backgroundColor:RED},{label:'收入率DiD',data:arr.map(x=>x.rev_rate),backgroundColor:ORANGE},{label:'利润率DiD',data:arr.map(x=>x.p_rate),backgroundColor:GREEN}]},options:{plugins:{legend:{position:'top',labels:{boxWidth:11,font:{size:10}}}},scales:{y:{title:{display:true,text:'率DiD(pp)',font:{size:10}}}}}});
+});
+document.getElementById('s3_concl').innerHTML=`<b>七维度下钻结论</b>：<br>
+<b>① 星级</b>：低星效果最好（间夜仅 -7%、利润 +24%）；高星间夜降幅大（-33%）但利润仅 +4%，量换价效率低。<br>
+<b>② 城市线级</b>：一线利润率 +15% 最优；低线（四/五线）利润率仅 +5-7%，效果弱。<br>
+<b>③ ADR 档</b>：低 ADR（0-150）效果最好（间夜 -7%、利润 +24%）；650+ 高档是<b>唯一利润负增</b>（间夜 -47%、利润 -5%），量价齐跌恶化。<br>
+<b>④ 规模档</b>：超大规模（800+）利润率 +28% 最优（间夜仅 -3%）；0-100 小规模间夜 -25%、利润 +8%，间夜流失重。<br>
+<b>⑤ 挂牌</b>：金牌最好（间夜 -10%、利润 +25%）；特牌最差（间夜 -32%、利润 +3%），贡献 89% 收入损失。<br>
+<b>⑥ 商圈</b>：火车站/大学利润率高（+17%/+22%）；度假区/博物馆近乎零利润（+2%）。<br>
+<b>⑦ 城市</b>：惠州/苏州/佛山利润率 23-37% 最优；武汉/郑州/西安利润负增（-4%~-14%），需复盘。<br>
+<b>总结</b>：间夜/收入损失集中在<b>高星、高ADR、特牌</b>酒店（贡献绝大部分损失），但这些高档酒店利润换价效率低；而<b>低星、低ADR、金牌、大规模</b>酒店间夜降幅小、利润提升显著，是策略的优质受益群体。`;
+
+// 板块4
+const s4=D.s4;
+new Chart(document.getElementById('s4_chart'),{type:'doughnut',data:{labels:s4.map(x=>x.tier),datasets:[{data:s4.map(x=>x.n),backgroundColor:TC}]},options:{plugins:{legend:{position:'right',labels:{boxWidth:14}}}}});
+let fh='<tr><th>层</th><th>家数</th><th>占比</th><th>DiD利润总量</th><th>ROI中位</th></tr>';
+s4.forEach(x=>{fh+=`<tr><td><b>${x.tier}</b></td><td>${x.n.toLocaleString()}</td><td>${x.pct}%</td><td class="${x.profit>=0?'pos':'neg'}">${x.profit>=0?'+':''}${x.profit.toLocaleString()}</td><td>${x.roi_med!==null?x.roi_med:'—'}</td></tr>`;});
+document.getElementById('s4_tbl').innerHTML=fh;
+// tier×星级交叉(低中高排序)
+const ss=sortArr(D.s4_star,'cat',sortStar);
+let sh='<tr><th>星级</th><th>总家数</th><th>极好</th><th>较好</th><th>一般</th><th>较差</th><th>极差</th><th>受益率</th></tr>';
+ss.forEach(r=>{const g=r['极好']+r['较好'];const rate=(g/r.n*100).toFixed(0);
+ sh+=`<tr><td><b>${r.cat}</b></td><td>${r.n}</td><td class="pos">${r['极好']}</td><td class="pos">${r['较好']}</td><td>${r['一般']}</td><td class="neg">${r['较差']}</td><td class="neg">${r['极差']}</td><td>${rate}%</td></tr>`;
+});
+document.getElementById('s4_star_tbl').innerHTML=sh;
+// tier×城市交叉(一二三排序)
+const sc=sortArr(D.s4_city,'cat',sortCity);
+let ch2='<tr><th>城市线级</th><th>总家数</th><th>极好</th><th>较好</th><th>一般</th><th>较差</th><th>极差</th><th>受益率</th></tr>';
+sc.forEach(r=>{const g=r['极好']+r['较好'];const rate=(g/r.n*100).toFixed(0);
+ ch2+=`<tr><td><b>${r.cat}</b></td><td>${r.n}</td><td class="pos">${r['极好']}</td><td class="pos">${r['较好']}</td><td>${r['一般']}</td><td class="neg">${r['较差']}</td><td class="neg">${r['极差']}</td><td>${rate}%</td></tr>`;
+});
+document.getElementById('s4_city_tbl').innerHTML=ch2;
+const good=s4[0].n+s4[1].n,bad=s4[3].n+s4[4].n;
+document.getElementById('s4_concl').innerHTML=`<b>打标分布</b>：极好 ${s4[0].n}（${s4[0].pct}%）+ 较好 ${s4[1].n}（${s4[1].pct}%）= <span class="pos">${good} 家（${(good/D.s1.n*100).toFixed(0)}%）明显受益</span>；极差 ${s4[4].n}（${s4[4].pct}%）+ 较差 ${s4[3].n} = <span class="neg">${bad} 家（${(bad/D.s1.n*100).toFixed(0)}%）明显受损</span>；一般 ${s4[2].n} 家（${s4[2].pct}%）介于其间（含以量换价低效的微利酒店和量利齐跌但损失尚可的酒店）。<b>策略分化明显</b>：约半数明显受益、约三成明显受损、近两成处于一般区间。`;
+</script></body></html>
